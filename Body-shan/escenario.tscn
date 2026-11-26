@@ -13,6 +13,7 @@
 [ext_resource type="Texture2D" uid="uid://b16bpnk4r65r7" path="res://botón de correr .png" id="11_correr"]
 [ext_resource type="Texture2D" uid="uid://n6rhw4i7lj5c" path="res://arbol1_2.png" id="12_arbol1"]
 [ext_resource type="Texture2D" uid="uid://nf3hiuff64ko" path="res://arbol2_2.jpg" id="13_arbol2"]
+[ext_resource type="PackedScene" path="res://enemigo.tscn" id="14_enemigo"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape_jugador"]
 radius = 0.61865234
@@ -1355,6 +1356,17 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="DanoFlash" type="ColorRect" parent="Interfaz"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.75, 0.02, 0.02, 0.35)
+
 [node name="BotonMenu" type="Button" parent="Interfaz" unique_id=898764605]
 custom_minimum_size = Vector2(140, 44)
 layout_mode = 1
@@ -1364,6 +1376,24 @@ offset_right = 160.0
 offset_bottom = 64.0
 theme_override_font_sizes/font_size = 20
 text = "◂ MENÚ"
+
+[node name="Vida" type="Label" parent="Interfaz"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -240.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = 60.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0.2, 0.02, 0.02, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 24
+text = "VIDA  3/3"
+horizontal_alignment = 2
+vertical_alignment = 1
 
 [node name="Objetivo" type="Label" parent="Interfaz"]
 layout_mode = 1
@@ -1416,7 +1446,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 0.6)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 16
-text = "versión.V(0,37)"
+text = "versión.V(0,38)"
 
 [node name="Mensaje" type="Control" parent="Interfaz" unique_id=1936384471]
 visible = false
@@ -1506,3 +1536,29 @@ directional_shadow_max_distance = 60.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1955302991]
 environment = SubResource("Entorno")
+
+[node name="Enemigos" type="Node3D" parent="."]
+
+[node name="EnemigoSendero" parent="Enemigos" instance=ExtResource("14_enemigo")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 17)
+
+[node name="EnemigoEntradaLaberinto" parent="Enemigos" instance=ExtResource("14_enemigo")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0.8, 8)
+
+[node name="EnemigoLaberinto1" parent="Enemigos" instance=ExtResource("14_enemigo")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0.8, 3)
+
+[node name="EnemigoLaberinto2" parent="Enemigos" instance=ExtResource("14_enemigo")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 0.8, -2.5)
+
+[node name="EnemigoExplanada" parent="Enemigos" instance=ExtResource("14_enemigo")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, -12)
+
+[node name="EnemigoJardinOeste" parent="Enemigos" instance=ExtResource("14_enemigo")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19, 0.8, -7.25)
+
+[node name="EnemigoJardinEste" parent="Enemigos" instance=ExtResource("14_enemigo")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19, 0.8, -7.25)
+
+[node name="EnemigoTemplo" parent="Enemigos" instance=ExtResource("14_enemigo")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 2.3, -20)

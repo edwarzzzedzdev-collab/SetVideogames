@@ -25,11 +25,21 @@
 # cuando el cuerpo está en el aire, deslizamiento por paredes, wall jump,
 # coyote time (margen para saltar tras dejar el borde) y reaparición si el
 # jugador cae del mapa.
+#
+# SISTEMA DE VIDA:
+# El jugador tiene varios puntos de vida. Los enemigos le llaman a
+# take_damage(); al recibir un golpe queda invulnerable unos instantes y
+# retrocede. Si la vida llega a cero, reaparece en el punto inicial con la
+# vida completa.
 # =============================================================================
 
 # Hereda de CharacterBody3D: un cuerpo cinemático que se mueve con
 # move_and_slide() y que detecta suelo, paredes y techos.
 extends CharacterBody3D
+
+## Se emite cada vez que cambia la vida. La interfaz lo usa para actualizar
+## el marcador. Los argumentos son (vida actual, vida máxima).
+signal health_changed(current_health: int, max_health: int)
 
 
 # -----------------------------------------------------------------------------
@@ -95,6 +105,15 @@ extends CharacterBody3D
 ## Se conoce como "jump buffer" y perdona pulsaciones anticipadas.
 @export var jump_buffer_time: float = 0.12
 
+## Puntos de vida máximos del jugador.
+@export var max_health: int = 3
+
+## Duración (s) de la invulnerabilidad después de recibir un golpe.
+@export var invulnerability_time: float = 1.2
+
+## Fuerza con la que el jugador sale despedido al recibir daño.
+@export var damage_knockback: float = 6.0
+
 
 # -----------------------------------------------------------------------------
 # CONSTANTES
@@ -139,6 +158,10 @@ var _is_crouching: bool = false
 ## Tiempo restante de "coyote time" y de "jump buffer".
 var _coyote_timer: float = 0.0
 var _jump_buffer_timer: float = 0.0
+
+## Vida actual y tiempo restante de invulnerabilidad.
+var _health: int = 0
+var _invulnerability_timer: float = 0.0
 
 ## Cápsula de colisión del jugador y nodo del modelo visual. Se guardan en
 ## _ready() para poder cambiar su altura al agacharse.
@@ -204,6 +227,71 @@ func _ready() -> void:
 
 	_model = get_node_or_null("Personaje") as Node3D
 
+	# La vida empieza al máximo. La interfaz se sincroniza después.
+	_health = max_health
+	health_changed.emit(_health, max_health)
+
+
+## Devuelve la vida actual. La usa la interfaz de escenario.gd.
+func get_health() -> int:
+	return _health
+
+
+## Devuelve la vida máxima. La usa la interfaz de escenario.gd.
+func get_max_health() -> int:
+	return max_health
+
+
+## Aplica daño al jugador. La llaman los enemigos al tocarlo.
+## "from_position" es el punto del enemigo y sirve para calcular el empuje.
+func take_damage(amount: int, from_position: Vector3 = Vector3.ZERO) -> void:
+	# Durante la invulnerabilidad o con la vida ya a cero se ignora el golpe.
+	if amount <= 0 or _invulnerability_timer > 0.0 or _health <= 0:
+		return
+
+	_health = maxi(_health - amount, 0)
+	health_changed.emit(_health, max_health)
+
+	if _health <= 0:
+		_respawn()
+		return
+
+	_invulnerability_timer = invulnerability_time
+	_apply_damage_knockback(from_position)
+
+
+## Cura al jugador sin superar la vida máxima.
+func heal(amount: int) -> void:
+	if amount <= 0:
+		return
+	_health = mini(_health + amount, max_health)
+	health_changed.emit(_health, max_health)
+
+
+## Empuja al jugador en dirección contraria al enemigo y lo lanza un poco
+## hacia arriba para que el golpe se sienta y pueda escapar.
+func _apply_damage_knockback(from_position: Vector3) -> void:
+	var push_direction := global_position - from_position
+	push_direction.y = 0.0
+
+	if push_direction.length_squared() < 0.001:
+		push_direction = -global_transform.basis.z
+	push_direction = push_direction.normalized()
+
+	velocity.x = push_direction.x * damage_knockback
+	velocity.z = push_direction.z * damage_knockback
+	velocity.y = maxf(velocity.y, 3.0)
+
+
+## Reaparece en el punto inicial con la vida completa y un breve margen de
+## invulnerabilidad para no morir encadenado si hay enemigos cerca.
+func _respawn() -> void:
+	global_position = _spawn_position
+	velocity = Vector3.ZERO
+	_health = max_health
+	_invulnerability_timer = maxf(invulnerability_time, 1.0)
+	health_changed.emit(_health, max_health)
+
 
 ## Solicita un salto desde los controles táctiles. La llama mobile_controls.gd
 ## mediante call_group("player", "request_jump") al pulsar el botón SALTO.
@@ -235,6 +323,9 @@ func set_touch_crouch(pressed: bool) -> void:
 ## "delta" son los segundos transcurridos desde el paso anterior; multiplicar
 ## por delta hace que el movimiento no dependa de los FPS.
 func _physics_process(delta: float) -> void:
+	# La invulnerabilidad se agota con el tiempo.
+	_invulnerability_timer = maxf(_invulnerability_timer - delta, 0.0)
+
 	# =========================================================================
 	# 1) AGACHARSE
 	# =========================================================================
@@ -388,11 +479,10 @@ func _physics_process(delta: float) -> void:
 	# =========================================================================
 	# 5) REAPARICIÓN SI SE CAE DEL MAPA
 	# =========================================================================
-	# Si la coordenada Y del jugador está por debajo del límite, se teletransporta
-	# al punto de aparición y se detiene por completo.
+	# Si la coordenada Y del jugador está por debajo del límite, reaparece en
+	# el punto inicial y recupera la vida.
 	if global_position.y < respawn_height:
-		global_position = _spawn_position
-		velocity = Vector3.ZERO
+		_respawn()
 
 	# =========================================================================
 	# 6) ANIMACIÓN DEL MODELO
