@@ -10,8 +10,8 @@
 #   del laberinto.
 # - Permite volver al menú de inicio con el botón MENÚ (o Escape).
 #
-# El resto del comportamiento (movimiento, cámara, salto, carrera y
-# reaparición si se cae) lo aportan personaje.gd, camara.gd y
+# El resto del comportamiento (movimiento, cámara, salto, carrera, agacharse,
+# wall jump y reaparición si se cae) lo aportan personaje.gd, camara.gd y
 # mobile_controls.gd, igual que en el mapa original.
 # =============================================================================
 
